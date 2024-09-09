@@ -39,11 +39,11 @@ download() {
     fi
 }
 
-# Funzione per decifrare e scaricare un singolo file
-# usage: decrypt_and_download <remote_filename> <local_filename>
+# Funzione scaricare e decriptare un singolo file
+# usage: download_and_decrypt <remote_filename> <local_filename>
 #   remote_filename: percorso del file remoto
 #   local_filename: percorso del file locale
-decrypt_and_download() {
+download_and_decrypt() {
     local remote_filename="$1"
     local local_filename="$2"
     local local_folder=$(dirname "$local_filename")
@@ -54,11 +54,11 @@ decrypt_and_download() {
         log "File chiave non trovato: $KEYFILE"
         return 1
     fi
-    if download "${remote_filename}" | gpg --batch --yes --passphrase-file "$KEYFILE" --decrypt --output "$local_filename"; then
+    if download "${remote_filename}" | gpg --batch --yes  --pinentry-mode loopback --passphrase-file "$KEYFILE" --decrypt --output "$local_filename"; then
         log "File $remote_filename decifrato con file chiave e scaricato con successo"
     else
         log "Errore durante la decifratura o il scaricamento di $remote_filename"
-        download "${remote_filename}" | tee "$local_filename"
+        download "${remote_filename}" > "${local_filename}.gpg"
         return 1
     fi
 }
@@ -81,6 +81,5 @@ aws s3 --endpoint-url "$BUCKET_ENDPOINT_URL" ls  --recursive "s3://$BUCKET_NAME"
         continue
     fi
     destination_file="${DESTINATION_FOLDER%/}/${filename#/}"
-    decrypt_and_download "$filename" "${destination_file%\.gpg}"
+    download_and_decrypt "$filename" "${destination_file%\.gpg}"
 done
-
