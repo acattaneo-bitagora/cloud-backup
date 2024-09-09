@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Questo script decifra e ripristina tutti i file in una cartella da un bucket S3
+# Questo script decifra e ripristina tutti i file da un bucket S3
 # I file vengono decifrati con GPG e scaricati da S3 con l'utility AWS CLI
 # I file vengono scaricati con la stessa struttura di cartelle della cartella remota
 # I file vengono scaricati in una cartella passata come primo parametro allo script
@@ -10,7 +10,7 @@
 # - GPG
 # - Il file chiave per la cifratura
 # - Un bucket S3 con le credenziali configurate in AWS CLI
-# - Un file di configurazione config.sh con le variabili BUCKET_ENDPOINT_URL, BUCKET_NAME, KEYFILE
+# - Un file di configurazione config.sh con le variabili AWS_ENDPOINT_URL, BUCKET_NAME, KEYFILE
 
 set -e
 

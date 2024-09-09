@@ -6,14 +6,14 @@ log() {
 
 
 aws_s3_cmd() {
-    if [ -z "$BUCKET_ENDPOINT_URL" ]; then
+    if [ -z "$AWS_ENDPOINT_URL" ]; then
         if aws s3 "$@" ; then
             return 0
         else
             return 1
         fi
     else
-        if aws s3 --endpoint-url "$BUCKET_ENDPOINT_URL" "$@" ; then
+        if aws s3 --endpoint-url "$AWS_ENDPOINT_URL" "$@" ; then
             return 0
         else
             return 1
