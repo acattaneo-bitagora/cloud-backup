@@ -1,6 +1,10 @@
 # Semplice funzione per loggare un messaggio
 # usage: log <message>
 log() {
+    log_dir="$(dirname "$LOG_FILE")"
+    if [ ! -d "$log_dir" ]; then
+        mkdir -p "$log_dir"
+    fi
     echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" | tee -a "$LOG_FILE"
 }
 

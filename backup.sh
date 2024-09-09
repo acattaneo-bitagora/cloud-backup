@@ -52,6 +52,7 @@ fi
 # Verifica se il file chiave esiste
 if [ ! -f "$KEYFILE" ]; then
     log "Generazione del file chiave '$KEYFILE' ..."
+    mkdir -p "$(dirname "$KEYFILE")"
     dd if=/dev/urandom bs=150 count=1 | base64 | tr --delete '\n' > "$KEYFILE"
 fi
 
@@ -72,4 +73,5 @@ find "$FOLDER_TO_PROCESS" -type f | while read -r file; do
 done
 
 log "Operazione completata."
+mkdir -p "$(dirname "$SUCCESS_FILE")"
 touch "$SUCCESS_FILE"
