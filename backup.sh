@@ -4,7 +4,7 @@ set -e
 # I file vengono cifrati con GPG e caricati su S3 con l'utility AWS CLI
 # I file vengono caricati con la stessa struttura di cartelle della cartella locale
 # I file vengono verificati dopo il caricamento con un checksum SHA256, utile per capire se il file è stato modificato durante il trasferimento
-# e che quindi il file remoto corrisponda al file locale
+# e quindi verificare che il file remoto, una volta decriptato, corrisponda al file locale
 #
 # Requisiti:
 # - AWS CLI
@@ -34,18 +34,22 @@ if [ -z "$SUCCESS_FILE" ]; then
     exit 1
 fi
 
-if [ -z "$FOLDER_TO_PROCESS" ]; then
-    log "Specificare la variabile FOLDER_TO_PROCESS nel file di configurazione"
-    exit 1
-fi
-
 if [ -z "$KEYFILE" ]; then
     log "Specificare la variabile KEYFILE nel file di configurazione"
     exit 1
 fi
 
+if [ -n "$1" ]; then
+    FOLDER_TO_PROCESS="$@"
+fi
+
+if [ -z "$FOLDER_TO_PROCESS" ]; then
+    log "usage: $0 </directory/da/processare>"
+    exit 1
+fi
+
 if [ ! -d "$FOLDER_TO_PROCESS" ]; then
-    log "La cartella $FOLDER_TO_PROCESS non esiste"
+    log "$FOLDER_TO_PROCESS: Il percorso non esiste"
     exit 1
 fi
 
@@ -75,3 +79,11 @@ done
 log "Operazione completata."
 mkdir -p "$(dirname "$SUCCESS_FILE")"
 touch "$SUCCESS_FILE"
+
+log "Pulizia file non più presenti localmente..."
+mirror_folder "$FOLDER_TO_PROCESS"
+
+# ATTENZIONE: tutti i file sul bucket che sono più vecchi di $RETENTION_DAYS giorni vengono eliminati
+if [ ! -z "$RETENTION_DAYS" ]; then
+    clean_old_files "$RETENTION_DAYS"
+fi

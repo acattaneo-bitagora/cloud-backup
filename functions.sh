@@ -9,22 +9,6 @@ log() {
 }
 
 
-aws_s3_cmd() {
-    if [ -z "$AWS_ENDPOINT_URL" ]; then
-        if aws s3 "$@" ; then
-            return 0
-        else
-            return 1
-        fi
-    else
-        if aws s3 --endpoint-url "$AWS_ENDPOINT_URL" "$@" ; then
-            return 0
-        else
-            return 1
-        fi
-    fi
-}
-
 # Funzione per caricare un singolo file su S3 da stdin
 # usage: cat <filepath> | upload <filename>
 #   filename: nome del file remoto
@@ -32,7 +16,7 @@ upload() {
     local filename="$1"
     local remote_filename="$BUCKET_NAME/${filename#/}"
     log "Caricamento di $filename su s3://$remote_filename..."
-    if aws_s3_cmd cp "-" "s3://$remote_filename" ; then
+    if aws s3 cp "-" "s3://$remote_filename" ; then
         return 0
     else
         return 1
@@ -80,7 +64,7 @@ encrypt_and_upload() {
 download() {
     local filename="$1"
     local remote_filename="$BUCKET_NAME/${filename#/}"
-    if aws_s3_cmd cp "s3://$remote_filename" -; then
+    if aws s3 cp "s3://$remote_filename" -; then
         return 0
     else
         return 1
@@ -118,6 +102,7 @@ verify_remote_file() {
 download_and_decrypt() {
     local remote_filename="$1"
     local local_filename="$2"
+    
     local local_folder=$(dirname "$local_filename")
     mkdir -p "$local_folder"
     log "Elaborazione di $remote_filename > $local_filename ..."
@@ -137,4 +122,33 @@ download_and_decrypt() {
         fi
         return 1
     fi
+}
+
+clean_old_files() {
+    local days="$1"
+    aws s3api list-objects-v2 --bucket "$BUCKET_NAME" \
+        --query "Contents[?LastModified<=\`$(date -d "-$days days" +%Y-%m-%dT%H:%M:%SZ)\`] | {Keys: []}" \
+        --output json | jq -r ".Keys[].Key" | while read -r line; do
+        log "Rimozione di $line"
+        s3_object_key="s3://$BUCKET_NAME/${line%/}"
+        aws s3 rm "$s3_object_key"
+    done
+}
+
+mirror_folder() {
+    local folder="${1#/}"
+    # for each file in bucket that start with folder name, check if the file exists in local folder ( without the .gpg extension )
+    # if not, remove the file from bucket
+    aws s3api list-objects-v2 --bucket "$BUCKET_NAME" \
+        --query "Contents[?starts_with(Key, \`$folder\`) == \`true\`] | {Keys: []}" \
+        --output json | jq -r ".Keys[].Key" | while read -r line; do
+        local_filename="/${line%.gpg}"
+        s3_object_key="s3://$BUCKET_NAME/${line%/}"
+        echo "s3_object_key: $s3_object_key"
+        echo "local_filename: $local_filename"
+        #if [ ! -f "$local_filename" ]; then
+        #    log "Rimozione di $line"
+        #    aws s3 rm "$s3_object_key"
+        #fi
+    done
 }
