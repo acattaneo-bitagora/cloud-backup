@@ -7,6 +7,7 @@
 * GnuPG
 * AWS cli
 * jq
+* pv
 
 
 #### GnuPG e jq
@@ -14,7 +15,7 @@
 Su debian e derivate:
 
 ```bash
-apt-get install gpg jq
+apt-get install gpg jq pv
 ```
 
 #### AWS cli

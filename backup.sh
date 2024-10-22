@@ -40,7 +40,7 @@ if [ -z "$KEYFILE" ]; then
 fi
 
 if [ -n "$1" ]; then
-    FOLDER_TO_PROCESS="$@"
+    FOLDER_TO_PROCESS="$*"
 fi
 
 if [ -z "$FOLDER_TO_PROCESS" ]; then
@@ -53,6 +53,17 @@ if [ ! -d "$FOLDER_TO_PROCESS" ]; then
     exit 1
 fi
 
+if [ -z "$UPLOAD_RATE_LIMIT" ]; then
+    # Nessun limite di velocità configurato
+    rate_limit=""
+else
+    if command -v pv &>/dev/null; then
+        rate_limit="$UPLOAD_RATE_LIMIT"
+    else
+        log "Il comando 'pv' non è installato, non è possibile limitare la velocità di upload"
+    fi
+fi
+
 # Verifica se il file chiave esiste
 if [ ! -f "$KEYFILE" ]; then
     log "Generazione del file chiave '$KEYFILE' ..."
@@ -62,7 +73,7 @@ fi
 
 # Elabora tutti i file nella cartella
 find "$FOLDER_TO_PROCESS" -type f | while read -r file; do
-    encrypt_and_upload "$file"
+    encrypt_and_upload "$file" "$rate_limit"
 done
 
 # Verifica tutti i file caricati
@@ -84,6 +95,6 @@ log "Pulizia file non più presenti localmente..."
 mirror_folder "$FOLDER_TO_PROCESS"
 
 # ATTENZIONE: tutti i file sul bucket che sono più vecchi di $RETENTION_DAYS giorni vengono eliminati
-if [ ! -z "$RETENTION_DAYS" ]; then
+if [ -n "$RETENTION_DAYS" ]; then
     clean_old_files "$RETENTION_DAYS"
 fi

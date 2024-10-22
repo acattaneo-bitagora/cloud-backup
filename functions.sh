@@ -1,3 +1,5 @@
+# shellcheck disable=SC2148
+
 # Semplice funzione per loggare un messaggio
 # usage: log <message>
 log() {
@@ -14,13 +16,25 @@ log() {
 #   filename: nome del file remoto
 upload() {
     local filename="$1"
+    # optional parameter rate limit
+    local rate_limit=""
+    if [ -n "$2" ]; then
+        if command -v pv &>/dev/null; then
+            rate_limit="$2"
+        else
+            log "Il comando 'pv' non è installato, non è possibile limitare la velocità di upload"
+        fi
+    fi
     local remote_filename="$BUCKET_NAME/${filename#/}"
     log "Caricamento di $filename su s3://$remote_filename..."
-    if aws s3 cp "-" "s3://$remote_filename" ; then
-        return 0
-    else
-        return 1
-    fi
+    {
+        if [ -n "$rate_limit" ]; then
+            pv  --average-rate --rate --rate-limit "$rate_limit" --progress >&3
+        else
+            cat - >&3
+        fi
+    } 3>&1 | aws s3 cp "-" "s3://$remote_filename"
+    return $?
 }
 
 encrypt() {
@@ -37,22 +51,25 @@ decrypt() {
 #   local_filename: percorso del file locale
 encrypt_and_upload() {
     local local_filename="$1"
-    log "Elaborazione di $file..."
-    
+    log "Elaborazione di $local_filename..."
+    local rate_limit=""
+    if [ -n "$2" ]; then
+        rate_limit="$2"
+    fi
     if [ ! -f "$KEYFILE" ]; then
         log "File chiave non trovato: '$KEYFILE'"
         exit 1
     fi
-    if [ ! -z "$DEBUG_DIR" ] ; then
+    if [ -n "$DEBUG_DIR" ] ; then
         debug_filename="$DEBUG_DIR/upload/${local_filename}.gpg"
         mkdir -p "$(dirname "$debug_filename")"
         encrypt "$local_filename" > "${debug_filename}.gpg"
-        cat "${debug_filename}.gpg" | decrypt > "$debug_filename"
+        decrypt < "${debug_filename}.gpg" > "$debug_filename"
     fi
-    if encrypt "$local_filename" | upload "${local_filename}.gpg"; then
+    if encrypt "$local_filename" | upload "${local_filename}.gpg" "$rate_limit"; then
         log "File $local_filename cifrato con file chiave e caricato con successo"
     else
-        log "Errore durante la cifratura o il caricamento di $file"
+        log "Errore durante la cifratura o il caricamento di $local_filename"
         return 1
     fi
 }
@@ -80,13 +97,18 @@ verify_remote_file() {
 
     log "Verifica di $local_filename su s3://$remote_filename..."
 
-    local local_checksum="$($CHECKSUM_COMMAND "$local_filename" | cut -d ' ' -f 1)"
-    local remove_checksum="$(download "${local_filename}.gpg" | decrypt | $CHECKSUM_COMMAND | cut -d ' ' -f 1)"
+    local local_checksum
+    local_checksum="$($CHECKSUM_COMMAND "$local_filename" | cut -d ' ' -f 1)"
+    
+    local remove_checksum
+    remove_checksum="$(download "${local_filename}.gpg" | decrypt | $CHECKSUM_COMMAND | cut -d ' ' -f 1)"
+    
     echo "$local_checksum == $remove_checksum"
+    
     if [ "$local_checksum" == "$remove_checksum" ]; then
         return 0
     else
-        if [ ! -z "$DEBUG_DIR" ] ; then
+        if [ -n "$DEBUG_DIR" ] ; then
             debug_filename="$DEBUG_DIR/download/${local_filename}.gpg"
             mkdir -p "$(dirname "$debug_filename")"
             download "${local_filename}.gpg" > "$debug_filename"
@@ -103,7 +125,8 @@ download_and_decrypt() {
     local remote_filename="$1"
     local local_filename="$2"
     
-    local local_folder=$(dirname "$local_filename")
+    local local_folder
+    local_folder=$(dirname "$local_filename")
     mkdir -p "$local_folder"
     log "Elaborazione di $remote_filename > $local_filename ..."
     
@@ -115,7 +138,7 @@ download_and_decrypt() {
         log "File $remote_filename decifrato con file chiave e scaricato con successo"
     else
         log "Errore durante la decifratura o il scaricamento di $remote_filename"
-        if [ ! -z "$DEBUG_DIR" ] ; then
+        if [ -n "$DEBUG_DIR" ] ; then
             debug_filename="$DEBUG_DIR/download/${local_filename}.gpg"
             mkdir -p "$(dirname "$debug_filename")"
             download "${remote_filename}" > "$debug_filename"
