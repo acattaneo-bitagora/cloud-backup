@@ -1,3 +1,4 @@
+# shellcheck disable=SC2148
 
 AWS_ENDPOINT_URL="https://s3.bitagoraorobica.cubbit.eu"
 # TODO: usare AWS_ENDPOINT_URL_S3
