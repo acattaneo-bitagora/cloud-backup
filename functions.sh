@@ -175,3 +175,9 @@ mirror_folder() {
         #fi
     done
 }
+
+
+generate_key() {
+    mkdir -p "$(dirname "$KEYFILE")"
+    dd if=/dev/urandom bs=150 count=1 | base64 | tr -d '\n' > "$KEYFILE"
+}

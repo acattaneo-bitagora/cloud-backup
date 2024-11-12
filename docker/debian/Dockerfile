@@ -16,7 +16,7 @@ WORKDIR /tmp
 RUN --mount=type=cache,target=/var/lib/apt/lists \
     set -x && \
     apt-get -qq update && \
-    apt-get install -y \
+    apt-get --no-install-recommends install -y \
         curl \
         unzip \
     && \
@@ -44,6 +44,14 @@ ENV LOG_FILE="/var/cloud-backup/cloud-backup.log"
 ENV CHECKSUM_COMMAND="sha256sum"
 
 VOLUME ["/var/cloud-backup", "/data"]
+
+# Tell cron what to log about jobs (errors are logged regardless of this value) as the sum of the following values:
+#     1      will log the start of all cron jobs
+#     2      will log the end of all cron jobs
+#     4      will log all failed jobs (exit status != 0)
+#     8      will log the process number of all cron jobs
+# The default is to log the start of all jobs (1).  Logging will be disabled if levels is set to zero (0).  A value of fifteen (15) will select all options.
+ENV LOG_LEVEL 15
 
 ADD . /opt/backup-cloud
 

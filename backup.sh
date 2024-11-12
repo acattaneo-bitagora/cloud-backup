@@ -14,7 +14,7 @@ set -e
 # - Un file di configurazione config.sh con le variabili AWS_ENDPOINT_URL, BUCKET_NAME, SUCCESS_FILE, FOLDER_TO_PROCESS, KEYFILE
 #
 # per creare il file chiave: 
-# $ dd if=/dev/urandom bs=150 count=1 | base64 | tr --delete '\n' > /var/cloud-backup/cloud.key
+# $ dd if=/dev/urandom bs=150 count=1 | base64 | tr -d '\n' > /var/cloud-backup/cloud.key
 
 
 # lettura configurazione
@@ -67,8 +67,7 @@ fi
 # Verifica se il file chiave esiste
 if [ ! -f "$KEYFILE" ]; then
     log "Generazione del file chiave '$KEYFILE' ..."
-    mkdir -p "$(dirname "$KEYFILE")"
-    dd if=/dev/urandom bs=150 count=1 | base64 | tr --delete '\n' > "$KEYFILE"
+    generate_key
 fi
 
 # Elabora tutti i file nella cartella

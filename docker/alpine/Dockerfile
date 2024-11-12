@@ -6,7 +6,8 @@ RUN --mount=type=cache,target=/var/cache/apk \
         gpg \
         jq \
         pv \
-        aws-cli
+        aws-cli \
+        bash
 
 ENV AWS_ENDPOINT_URL="https://s3.bitagoraorobica.cubbit.eu"
 ENV AWS_ACCESS_KEY_ID="<access-key>"
@@ -28,4 +29,11 @@ VOLUME ["/var/cloud-backup", "/data"]
 
 WORKDIR /opt/backup-cloud
 
-ENTRYPOINT ["/opt/backup-cloud/backup.sh"]
+ENV SCHEDULE "0 0 * * *"
+ENV BACKUP_ARGS ""
+# MOST VERBOSE LOG LEVEL IS 0 - NORMAL IS 8
+ENV LOG_LEVEL 0
+COPY docker/alpine/entrypoint.sh /entrypoint.sh
+RUN chmod 0755 /entrypoint.sh
+
+ENTRYPOINT ["/entrypoint.sh"]
