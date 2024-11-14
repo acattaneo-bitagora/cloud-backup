@@ -3,7 +3,7 @@ FROM alpine:latest
 # Install dependencies
 RUN --mount=type=cache,target=/var/cache/apk \
     apk add --no-cache \
-        gpg \
+        gnupg \
         jq \
         pv \
         aws-cli \
