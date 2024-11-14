@@ -1,0 +1,21 @@
+services:
+  cloud-backup:
+    # image: ghcr.io/acattaneo-bitagora/cloud-backup:alpine
+    build:
+      context: ../
+      dockerfile: alpine/Dockerfile
+    container_name: cloud-backup
+    restart: unless-stopped
+    volumes:
+      - "${FOLDER_TO_PROCESS}:${FOLDER_TO_PROCESS}"
+      - ./data/:/var/cloud-backup/
+    environment:
+      - FOLDER_TO_PROCESS="${FOLDER_TO_PROCESS}"
+      - AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID}"
+      - AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY}"
+      - BUCKET_NAME="${BUCKET_NAME}"
+      - AWS_ENDPOINT_URL="https://s3.bitagoraorobica.cubbit.eu"
+      - SUCCESS_FILE="/var/cloud-backup/success"
+      - KEYFILE="/var/cloud-backup/cloud.key"
+      - LOG_FILE="/var/cloud-backup/cloud-backup.log"
+      - CHECKSUM_COMMAND="sha256sum"

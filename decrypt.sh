@@ -2,7 +2,9 @@
 set -e
 
 pushd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null
-source ./config.sh
+if [  -f ./config.sh ]; then
+    source ./config.sh
+fi
 source ./functions.sh
 popd &>/dev/null
 
