@@ -19,6 +19,7 @@ RUN --mount=type=cache,target=/var/lib/apt/lists \
     apt-get --no-install-recommends install -y \
         curl \
         unzip \
+        ca-certificates \
     && \
     curl -sL "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && \
     unzip awscliv2.zip && \

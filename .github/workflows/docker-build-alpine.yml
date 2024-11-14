@@ -40,18 +40,6 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       # https://github.com/docker/build-push-action
-      - name: Build and push Docker image debian
-        id: build-and-push-debian
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          file: ./docker/debian/Dockerfile
-          push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:debian
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      # https://github.com/docker/build-push-action
       - name: Build and push Docker image alpine
         id: build-and-push-alpine
         uses: docker/build-push-action@v4
