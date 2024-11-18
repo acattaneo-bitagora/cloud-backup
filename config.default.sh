@@ -11,7 +11,7 @@ FOLDER_TO_PROCESS="/var/lib/vz/dump/"
 KEYFILE="/var/cloud-backup/cloud.key"
 LOG_FILE="/var/cloud-backup/cloud-backup.log"
 CHECKSUM_COMMAND="sha256sum"
-
+MAX_UPLOAD_ATTEMPTS=10
 # export DEBUG_DIR="./debug"
 
 export AWS_ENDPOINT_URL
@@ -23,3 +23,4 @@ export CHECKSUM_COMMAND
 export AWS_ACCESS_KEY_ID
 export AWS_SECRET_ACCESS_KEY
 export FOLDER_TO_PROCESS
+export MAX_UPLOAD_ATTEMPTS

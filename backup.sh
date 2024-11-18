@@ -25,6 +25,7 @@ fi
 source ./functions.sh
 popd &>/dev/null
 
+MAX_UPLOAD_ATTEMPTS=${MAX_UPLOAD_ATTEMPTS:-10}
 
 if [ -z "$BUCKET_NAME" ]; then
     log "Specificare la variabile BUCKET_NAME nel file di configurazione"
@@ -74,7 +75,21 @@ fi
 
 # Elabora tutti i file nella cartella
 find "$FOLDER_TO_PROCESS" -type f | while read -r file; do
-    encrypt_and_upload "$file" "$rate_limit"
+    success=false
+    
+    for i in $(seq 1 $MAX_UPLOAD_ATTEMPTS); do
+        if encrypt_and_upload "$file" "$rate_limit"; then
+            success=true
+            break
+        else
+            echo "Tentativo $i fallito per: $file"
+            sleep 1
+        fi
+    done
+    
+    if [ "$success" = false ]; then
+        echo "Impossibile caricare il file dopo $MAX_UPLOAD_ATTEMPTS tentativi: $file"
+    fi
 done
 
 # Verifica tutti i file caricati
