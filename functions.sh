@@ -46,6 +46,24 @@ decrypt() {
     gpg --batch --yes --pinentry-mode loopback --passphrase-file "$KEYFILE" --decrypt --output - 
 }
 
+
+remote_file_exists() {
+    local remote_filename="$BUCKET_NAME/${filename#/}"
+    if aws s3 ls "s3://$remote_filename" > /dev/null 2>&1; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+get_existing_remote_checksum() {
+    local filename="$1"
+    local remote_filename="$BUCKET_NAME/${filename#/}.checksum"
+    aws s3 cp "s3://$remote_filename" -
+   
+}
+
+
 # Funzione per cifrare e caricare un singolo file
 # usage: encrypt_and_upload <local_filename>
 #   local_filename: percorso del file locale
@@ -66,8 +84,18 @@ encrypt_and_upload() {
         encrypt "$local_filename" > "${debug_filename}.gpg"
         decrypt < "${debug_filename}.gpg" > "$debug_filename"
     fi
+    local local_checksum="$($CHECKSUM_COMMAND "$local_filename" | cut -d ' ' -f 1)"
+    if remote_file_exists "$local_filename"; then
+        local remote_checksum="$(get_existing_remote_checksum "$local_filename")"
+        if [ "$remote_checksum" == "$local_checksum" ]; then
+            log "File $local_filename non modificato, non viene caricato"
+            return 0
+        fi
+    fi
     if encrypt "$local_filename" | upload "${local_filename}.gpg" "$rate_limit"; then
+        echo -n "$local_checksum" | aws s3 cp - "s3://$BUCKET_NAME/${local_filename#/}.checksum"
         log "File $local_filename cifrato con file chiave e caricato con successo"
+        return 0
     else
         log "Errore durante la cifratura o il caricamento di $local_filename"
         return 1
