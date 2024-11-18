@@ -77,7 +77,7 @@ fi
 find "$FOLDER_TO_PROCESS" -type f | while read -r file; do
     success=false
     
-    for i in $(seq 1 $MAX_UPLOAD_ATTEMPTS); do
+    for i in $(seq 1 "$MAX_UPLOAD_ATTEMPTS"); do
         if encrypt_and_upload "$file" "$rate_limit"; then
             success=true
             break

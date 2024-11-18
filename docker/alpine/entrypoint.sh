@@ -16,4 +16,4 @@ $SCHEDULE /opt/backup-cloud/backup.sh $BACKUP_ARGS $@
 EOF
 
 # start cron
-exec /usr/sbin/crond -f -l ${LOG_LEVEL:-8} -L /dev/stderr -c /etc/crontabs/
+exec /usr/sbin/crond -f -l "${LOG_LEVEL:-8}" -L /dev/stderr -c /etc/crontabs/
