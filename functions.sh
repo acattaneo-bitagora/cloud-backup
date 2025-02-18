@@ -59,7 +59,7 @@ remote_file_exists() {
 get_existing_remote_checksum() {
     local filename="$1"
     local remote_filename="$BUCKET_NAME/${filename#/}.checksum"
-    aws s3 cp "s3://$remote_filename" -
+    aws s3 cp "s3://$remote_filename" - 2>/dev/null
    
 }
 
@@ -131,8 +131,6 @@ verify_remote_file() {
     local remove_checksum
     remove_checksum="$(download "${local_filename}.gpg" | decrypt | $CHECKSUM_COMMAND | cut -d ' ' -f 1)"
     
-    echo "$local_checksum == $remove_checksum"
-    
     if [ "$local_checksum" == "$remove_checksum" ]; then
         return 0
     else
@@ -193,14 +191,15 @@ mirror_folder() {
     aws s3api list-objects-v2 --bucket "$BUCKET_NAME" \
         --query "Contents[?starts_with(Key, \`$folder\`) == \`true\`] | {Keys: []}" \
         --output json | jq -r ".Keys[].Key" | while read -r line; do
-        local_filename="/${line%.gpg}"
+        local_filename="${line%.gpg}"
+        local_filename="${local_filename%.checksum}"
         s3_object_key="s3://$BUCKET_NAME/${line%/}"
-        echo "s3_object_key: $s3_object_key"
-        echo "local_filename: $local_filename"
-        #if [ ! -f "$local_filename" ]; then
-        #    log "Rimozione di $line"
-        #    aws s3 rm "$s3_object_key"
-        #fi
+        #echo "s3_object_key: $s3_object_key"
+        # echo "local_filename: $local_filename"
+        if [ ! -f "$local_filename" ]; then
+            log "Rimozione di $line ( $local_filename )"
+            #aws s3 rm "$s3_object_key"
+        fi
     done
 }
 
