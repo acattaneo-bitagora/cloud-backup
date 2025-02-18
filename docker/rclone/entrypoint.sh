@@ -16,4 +16,7 @@ $SCHEDULE $BACKUP_COMMAND
 EOF
 
 # start cron
-exec /usr/sbin/crond -f -l "${LOG_LEVEL:-8}" -L /dev/stderr -c /etc/crontabs/
+/usr/sbin/crond -f -l "${LOG_LEVEL:-8}" -L /dev/stderr -c /etc/crontabs/ &
+
+
+exec /usr/local/bin/rclone rcd --rc-web-gui --rc-user $GUI_USERNAME --rc-pass $GUI_PASSWORD  --rc-addr 0.0.0.0:$PORT
